@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "originalFormatVersion": "3.0",
+  "apiVersion": "v1",
+  "descriptorVersion": "1.0.0",
+  "classifier": "oas",
+  "main": "products-api.json",
+  "assetId": "products-api",
+  "groupId": "8603d750-d616-47e3-9c00-78a09d222042",
+  "organizationId": "8603d750-d616-47e3-9c00-78a09d222042",
+  "name": "products-api"
+}
