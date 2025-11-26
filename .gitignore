@@ -1,0 +1,9 @@
+.vars
+.env
+.secrets
+.DS_Store
+.tmp
+.mvn
+.vscode
+
+playground%  
