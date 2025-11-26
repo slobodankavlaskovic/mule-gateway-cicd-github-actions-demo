@@ -1,0 +1,420 @@
+name: "MuleSoft CI/CD"
+
+on:
+#   push:
+    # branches:
+    #   - main
+  workflow_dispatch:
+
+env:
+
+  ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
+  ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+  ANYPOINT_HOST: ${{ vars.ANYPOINT_HOST }}
+  ANYPOINT_ORG_ID: ${{ vars.ANYPOINT_ORG_ID }}
+  ANYPOINT_ENV: ${{ vars.ANYPOINT_ENV }}
+  ANYPOINT_ENV_ID: ${{ vars.ANYPOINT_ENV_ID }}
+
+  API_SPEC_FILE_PATH: ${{ vars.API_SPEC_FILE_PATH }}
+  API_POLICIES_FILE_PATH: ${{ vars.API_POLICIES_FILE_PATH }}
+
+  ENABLE_GOVERNANCE_VALIDATE: ${{ vars.ENABLE_GOVERNANCE_VALIDATE }}
+  ENABLE_MANAGE_POLICIES: ${{ vars.ENABLE_MANAGE_POLICIES }}
+
+  API_PROTOCOL: ${{ vars.API_PROTOCOL }}
+  API_LISTEN_PORT: ${{ vars.API_LISTEN_PORT }}
+  API_BASE_PATH: ${{ vars.API_BASE_PATH }}
+  API_TLS_SECRET_GROUP_ID: ${{ vars.API_TLS_SECRET_GROUP_ID }}
+  API_TLS_CONTEXT_ID: ${{ vars.API_TLS_CONTEXT_ID }}
+  API_CONSUME_ENDPOINT: ${{ vars.API_CONSUME_ENDPOINT }}
+  API_BACKEND_UPSTREAM_URI: ${{ vars.API_BACKEND_UPSTREAM_URI }}
+  
+  GATEWAY_TYPE: ${{ vars.GATEWAY_TYPE }}
+  GATEWAY_VERSION: ${{ vars.GATEWAY_VERSION }}
+  GATEWAY_TARGET: ${{ vars.GATEWAY_TARGET }}
+  GATEWAY_DEPLOYMENT_TYPE: ${{ vars.GATEWAY_DEPLOYMENT_TYPE }}
+
+jobs:
+
+  validate:
+    name: "Validate API Spec"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Validate API Spec with Governance
+        id: validate_api_spec
+        if: ${{ env.ENABLE_GOVERNANCE_VALIDATE == 'true' }}
+        run: |
+          # view: https://docs.mulesoft.com/anypoint-cli/latest/api-governance#governance-api-validate
+          anypoint-cli-v4 governance:api:validate . --remote-rulesets 68ef9520-24e9-4cf2-b2f5-620025690913/open-api-best-practices/1.6.3 \
+            --remote-rulesets 68ef9520-24e9-4cf2-b2f5-620025690913/mule-api-management-best-practices/1.1.1 \
+            --remote-rulesets 68ef9520-24e9-4cf2-b2f5-620025690913/anypoint-best-practices/1.3.1 \
+            --remote-rulesets 68ef9520-24e9-4cf2-b2f5-620025690913/openapi-best-practices/1.1.0
+
+  publish:
+    name: Publish API to Exchange
+    needs: validate
+    runs-on: self-hosted
+    outputs:
+      asset_id: ${{ steps.load.outputs.asset_id }}
+      asset_version: ${{ steps.load.outputs.asset_version }}
+      api_version: ${{ steps.load.outputs.api_version }}
+      api_label: ${{ steps.load.outputs.api_label }}
+      api_base_path: ${{ steps.load.outputs.api_base_path }}
+      asset_exists: ${{ steps.check.outputs.asset_exists }}
+      asset_created: ${{ steps.publish.outputs.asset_created }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Load API Metadata
+        id: load
+        run: |
+          api_spec=`cat ${{env.API_SPEC_FILE_PATH}} | jq -c`
+          asset_name="$(echo $api_spec | jq -r '.info.title')"
+          asset_id="$(echo $asset_name | iconv -t ascii//TRANSLIT | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z)"
+          asset_desc="$(echo $api_spec | jq -r '.info.description')"
+          asset_version="$(echo $api_spec | jq -r '.info.version')"
+          asset_major_version=`echo $asset_version | awk -F"." '{print $1}'`
+          api_version="v${asset_major_version}"
+          api_base_path="/${api_version}${{env.API_BASE_PATH}}"
+          api_label="${asset_version}-$(echo ${{env.GATEWAY_TYPE}} | cut -c 1-4)-$(echo ${{env.GATEWAY_TARGET}} | cut -c 1-8)"
+
+          echo "asset_name=$asset_name" >> "$GITHUB_OUTPUT"
+          echo "asset_id=$asset_id" >> "$GITHUB_OUTPUT"
+          echo "asset_desc=$asset_desc" >> "$GITHUB_OUTPUT"
+          echo "asset_version=$asset_version" >> "$GITHUB_OUTPUT"
+          echo "asset_major_version=$asset_major_version" >> "$GITHUB_OUTPUT"
+          echo "api_version=$api_version" >> "$GITHUB_OUTPUT"
+          echo "api_base_path=$api_base_path" >> "$GITHUB_OUTPUT"
+          echo "api_label=$api_label" >> "$GITHUB_OUTPUT"
+
+      - name: Check API version
+        id: check
+        continue-on-error: true
+        run: |
+          output=$(anypoint-cli-v4 exchange:asset:describe ${{steps.load.outputs.asset_id}}/${{steps.load.outputs.asset_version}})
+          echo "asset_exists=true" >> "$GITHUB_OUTPUT"
+
+      - name: Publish API Spec. to Exchange
+        if: ${{ steps.check.outputs.asset_exists != 'true' }}
+        id: publish
+        run: |
+          output=$(
+            anypoint-cli-v4 exchange:asset:upload ${{steps.load.outputs.asset_id}}/${{steps.load.outputs.asset_version}} \
+            --name "${{steps.load.outputs.asset_name}}" \
+            --description "${{steps.load.outputs.asset_desc}}" \
+            --properties='{"mainFile": "'${{env.API_SPEC_FILE_PATH}}'", "apiVersion": "'${{steps.load.outputs.api_version}}'"}' \
+            --type rest-api \
+            --files '{"oas.json": "'${{env.API_SPEC_FILE_PATH}}'"}'
+          )
+          echo "asset_created=true" >> "$GITHUB_OUTPUT"
+
+  manage_api_instance:
+    name: "Manage API Instance"
+    needs: publish
+    runs-on: self-hosted
+    outputs:
+      api_instance_exists: ${{ steps.check_api_instances.outputs.api_instance_exists }}
+      instances_to_update: ${{ steps.check_api_instances.outputs.instances_to_update }}
+      instances_to_deprecate: ${{ steps.check_api_instances.outputs.instances_to_deprecate }}
+      api_instance_id: ${{ steps.set_metadata.outputs.APIINSTANCEID }}
+      asset_id: ${{ needs.publish.outputs.asset_id }}
+      technology: ${{ steps.check_api_instances.outputs.technology }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Check API Instances
+        id: check_api_instances
+        run: |
+          instances=$(anypoint-cli-v4 api-mgr api list --assetId ${{needs.publish.outputs.asset_id}} -o json)
+          instances=$(echo $instances | jq -r '.[] | select(.technology == "${{env.GATEWAY_TYPE}}") | [.]')
+          echo "technology=$(echo ${{env.GATEWAY_TYPE}} | cut -c 1)" >> "$GITHUB_OUTPUT"
+
+          api_instance_exists=$(echo $instances | jq -r '.[] | select(.productVersion == "${{needs.publish.outputs.API_VERSION}}") | any(.)')
+          echo "api_instance_exists=$api_instance_exists" >> "$GITHUB_OUTPUT"
+
+          existingInstanceId=$(echo $instances | jq -r '.[] | select(.productVersion == "${{needs.publish.outputs.API_VERSION}}") | .id')
+          echo "APIINSTANCEID=$existingInstanceId" >> "$GITHUB_OUTPUT"
+
+          instances_to_update=$(echo $instances | jq -r '.[] | select(.productVersion == "${{needs.publish.outputs.API_VERSION}}" and .assetVersion != "${{needs.publish.outputs.asset_version}}") | .id')
+          echo "instances_to_update=$instances_to_update" >> "$GITHUB_OUTPUT"
+
+          instances_to_deprecate=$(echo $instances | jq -r '.[] | select(.productVersion != "${{needs.publish.outputs.API_VERSION}}" and .deprecated == false) | .id')
+          echo "instances_to_deprecate=$instances_to_deprecate" >> "$GITHUB_OUTPUT"
+
+      - name: Create API Instance
+        id: create_http_api_instance
+        if: ${{ steps.check_api_instances.outputs.api_instance_exists != 'true' && env.API_PROTOCOL == 'http' }}
+        run: |
+          output=$(
+            anypoint-cli-v4 api-mgr:api:manage ${{needs.publish.outputs.asset_id}} ${{needs.publish.outputs.asset_version}} \
+            -${{steps.check_api_instances.outputs.technology}} \
+            --deploymentType ${{env.GATEWAY_DEPLOYMENT_TYPE}} \
+            --uri ${{env.API_BACKEND_UPSTREAM_URI}} \
+            --path ${{needs.publish.outputs.api_base_path}} \
+            --port ${{env.API_LISTEN_PORT}} \
+            --scheme ${{env.API_PROTOCOL}} \
+            --type raml \
+            --withProxy \
+            --apiInstanceLabel ${{needs.publish.outputs.api_label}} \
+            --endpointUri ${{env.API_CONSUME_ENDPOINT}}
+          )
+          api_instance_id=$(echo $output | awk -F':' '{print $2}' | sed 's/ //g')
+          echo "APIINSTANCEID=$api_instance_id" >> "$GITHUB_OUTPUT"
+
+      - name: Create API Instance 
+        id: create_https_api_instance
+        if: ${{ steps.check_api_instances.outputs.api_instance_exists != 'true' && env.API_PROTOCOL == 'https' }}
+        run: |
+          output=$(
+            anypoint-cli-v4 api-mgr:api:manage ${{needs.publish.outputs.asset_id}} ${{needs.publish.outputs.asset_version}} \
+            -${{steps.check_api_instances.outputs.technology}} \
+            --deploymentType ${{env.GATEWAY_DEPLOYMENT_TYPE}} \
+            --uri ${{env.API_BACKEND_UPSTREAM_URI}} \
+            --path ${{needs.publish.outputs.api_base_path}} \
+            --port ${{env.API_LISTEN_PORT}} \
+            --scheme ${{env.API_PROTOCOL}} \
+            --type raml \
+            --withProxy \
+            --apiInstanceLabel ${{needs.publish.outputs.api_label}} \
+            --endpointUri ${{env.API_CONSUME_ENDPOINT}} \
+            --inboundSecretGroupId ${{env.API_TLS_SECRET_GROUP_ID}} \
+            --inboundTlsContextId ${{env.API_TLS_CONTEXT_ID}}
+          )
+          api_instance_id=$(echo $output | awk -F':' '{print $2}' | sed 's/ //g')
+          echo "APIINSTANCEID=$api_instance_id" >> "$GITHUB_OUTPUT"
+
+      - name: Set Metadata
+        id: set_metadata
+        run: |
+          echo "APIINSTANCEID=${{ steps.check_api_instances.outputs.APIINSTANCEID || steps.create_http_api_instance.outputs.APIINSTANCEID }}" >> $GITHUB_OUTPUT
+
+      - name: Upgrade existing API Instance
+        id: update_api_instance
+        if: ${{ steps.check_api_instances.outputs.instances_to_update != '' }}
+        run: |
+          output=$(anypoint-cli-v4 api-mgr api change-specification ${{steps.check_api_instances.outputs.instances_to_update}} ${{needs.publish.outputs.asset_version}})
+          echo "api change-specification output: $output"
+
+          output=$(anypoint-cli-v4 api-mgr api edit ${{steps.check_api_instances.outputs.instances_to_update}} --apiInstanceLabel ${{needs.publish.outputs.asset_version}} --port ${{env.API_LISTEN_PORT}})
+          echo "api edit output: $output"
+
+  manage_api_policies:
+    name: "Manage API Policies"
+    needs: manage_api_instance
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get API Instance policies
+        id: get_api_policies
+        if: ${{ env.ENABLE_MANAGE_POLICIES == 'true' }}
+        run: |
+          api_policies=$(anypoint-cli-v4 api-mgr:policy:list ${{needs.manage_api_instance.outputs.api_instance_id}} -o json)
+          policies=$(jq -n --slurpfile policies "${{env.API_POLICIES_FILE_PATH}}" \
+              --argjson api_policies "$api_policies" '[
+              $policies[0][] as $p
+              | (
+                  [
+                      $api_policies[]
+                      | select(
+                          (."Asset ID" | tostring) == ($p.assetId | tostring) and
+                          (."Asset Version" | tostring) == ($p.assetVersion | tostring)
+                      )
+                  ] as $matches
+                  | if ($matches | length) > 0 then
+                          $p * {
+                              found: true,
+                              policyId: $matches[].ID
+                          }
+                      else
+                          $p * {found: false}
+                      end
+                  )
+              ]'
+          )
+          policies_to_apply=$(echo "$policies" | jq -r '[.[] | select(.found == false) | .] | tostring')
+          policies_to_update=$(echo "$policies" | jq -r '[.[] | select(.found == true) | .] | tostring')
+
+          policies_to_remove=$(jq -n --slurpfile policies "${{env.API_POLICIES_FILE_PATH}}" \
+              --argjson api_policies "$api_policies" '[
+              $api_policies[] as $p
+              | (
+                  [
+                      $policies[0][]
+                      | select(
+                          ($p."Asset ID" | tostring) == (.assetId | tostring) and
+                          ($p."Asset Version" | tostring) == (.assetVersion | tostring)
+                      )
+                  ] as $matches
+                  | if ($matches | length) > 0 then
+                          {
+                              found: true
+                          }
+                      else
+                          {
+                              found: false,
+                              policyId: $p.ID
+                          }
+                      end
+                  )
+              ] | .[] | select(.found == false) | [.policyId] | tostring'
+          )
+
+          echo "policies_to_apply=$policies_to_apply" >> "$GITHUB_OUTPUT"
+          echo "policies_to_update=$policies_to_update" >> "$GITHUB_OUTPUT"
+          echo "policies_to_remove=$policies_to_remove" >> "$GITHUB_OUTPUT"
+
+      - name: Apply policies to API Instance
+        id: apply_policies
+        if: ${{ env.ENABLE_MANAGE_POLICIES == 'true' && steps.get_api_policies.outputs.policies_to_apply != '[]' }}
+        run: |
+          policies_to_apply='${{steps.get_api_policies.outputs.policies_to_apply}}'
+          count=$(echo $policies_to_apply | jq -r "length")
+
+          for ((i=0; i<$count; i++)); do
+
+            policyAssetId=$(echo $policies_to_apply | jq -r ".[$i].assetId")
+            policyGroupId=$(echo $policies_to_apply | jq -r ".[$i].groupId")
+            policyAssetVersion=$(echo $policies_to_apply | jq -r ".[$i].assetVersion")
+            policyConfig=$(echo $policies_to_apply | jq -r ".[$i].configurationData" -c)
+
+            anypoint-cli-v4 api-mgr:policy:apply ${{needs.manage_api_instance.outputs.api_instance_id}} ${policyAssetId} \
+              --policyVersion ${policyAssetVersion} \
+              --groupId ${policyGroupId} -c "${policyConfig}"
+          done
+
+      - name: Update API Instance policies
+        id: update_policies
+        if: ${{ env.ENABLE_MANAGE_POLICIES == 'true' && steps.get_api_policies.outputs.policies_to_update != '[]' }}
+        continue-on-error: true
+        run: |
+          policies_to_update='${{steps.get_api_policies.outputs.policies_to_update}}'
+          count=$(echo $policies_to_update | jq -r "length")
+
+          for ((i=0; i<$count; i++)); do
+
+            policyId=$(echo $policies_to_update | jq -r ".[$i].policyId")
+            policyConfig=$(echo $policies_to_update | jq -r ".[$i].configurationData" -c)
+
+            anypoint-cli-v4 api-mgr:policy:edit ${{needs.manage_api_instance.outputs.api_instance_id}} ${policyId} -c "${policyConfig}"
+          done
+
+      - name: Remove API Instance policies
+        id: remove_policies
+        if: ${{ env.ENABLE_MANAGE_POLICIES == 'true' && steps.get_api_policies.outputs.policies_to_remove != '' }}
+        continue-on-error: true
+        run: |
+          policies_to_remove=${{steps.get_api_policies.outputs.policies_to_remove}}
+          count=$(echo $policies_to_remove | jq -r "length")
+
+          for ((i=0; i<$count; i++)); do
+            policyId=$(echo $policies_to_remove | jq -r ".[$i]")
+            anypoint-cli-v4 api-mgr:policy:remove ${{needs.manage_api_instance.outputs.api_instance_id}} ${policyId}
+          done
+
+      - name: Update API Instance policies order
+        id: update_policies_order
+        if: ${{ env.ENABLE_MANAGE_POLICIES == 'true' }}
+        continue-on-error: true
+        run: |
+          api_policies=$(anypoint-cli-v4 api-mgr:policy:list ${{needs.manage_api_instance.outputs.api_instance_id}} -o json)
+          policies_order=$(jq --slurpfile policies "${{env.API_POLICIES_FILE_PATH}}" '[
+              [.[] as $api |
+                  ($policies[0][] | select(.assetId == $api["Asset ID"] and .assetVersion == $api["Asset Version"])) as $match |
+                  $api + {order: $match.order}
+              ] | .[] | {id: .ID, order: .order}
+              ]' <<< "$api_policies"
+          )
+          
+          # get access token using client_credentials grant type
+          access_token=$(curl -s -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
+              -H "content-type: application/json" \
+              -d "{\"client_id\": \"${{env.ANYPOINT_CLIENT_ID}}\", \"client_secret\": \"${{env.ANYPOINT_CLIENT_SECRET}}\", \"grant_type\": \"client_credentials\"}" \
+              | jq -r '.access_token'
+          )
+
+          # call API to update the policies order
+          curl -s -X PATCH "https:///anypoint.mulesoft.com/apimanager/api/v1/organizations/${{env.ANYPOINT_ORG_ID}}/environments/${{env.ANYPOINT_ENV_ID}}/apis/${{needs.manage_api_instance.outputs.api_instance_id}}/policies" \
+          -H "content-type: application/json" -H "Authorization: Bearer $access_token" -d "$policies_order"
+
+  deploy_api_instance:
+    name: "Deploy API to Flex Gateway"
+    needs: [manage_api_instance, manage_api_policies]
+    runs-on: self-hosted
+
+    steps:
+      - name: Get API Instance status
+        id: get_api_instance_status
+        run: |
+          api_instance_status=$(anypoint-cli-v4 api-mgr:api:describe ${{needs.manage_api_instance.outputs.api_instance_id}} -o json | jq -r '.status')
+          echo "status=$api_instance_status" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy API Instance to Flex Gateway
+        if: ${{ steps.get_api_instance_status.outputs.status == 'unregistered' }}
+        id: deploy_api_instance
+        run: |
+          applicationName=""
+          if [[ ${{needs.manage_api_instance.outputs.technology}} -eq 'm' ]]; then
+            applicationName="--applicationName ${{needs.manage_api_instance.outputs.asset_id}}-gw"
+          fi
+
+          anypoint-cli-v4 api-mgr:api:deploy ${{needs.manage_api_instance.outputs.api_instance_id}} \
+          --target ${{env.GATEWAY_TARGET}} \
+          --gatewayVersion ${{env.GATEWAY_VERSION}} \
+          --overwrite \
+          $applicationName
+
+      - name: Redeploy API Instance to Flex Gateway
+        if: ${{ steps.get_api_instance_status.outputs.status == 'active' }}
+        id: redeploy_api_instance
+        run: |
+          applicationName=""
+          if [[ ${{needs.manage_api_instance.outputs.technology}} -eq 'm' ]]; then
+            applicationName="--applicationName ${{needs.manage_api_instance.asset_id}}-gw"
+          fi
+          anypoint-cli-v4 api-mgr:api:redeploy ${{needs.manage_api_instance.outputs.api_instance_id}} \
+          --target ${{env.GATEWAY_TARGET}} \
+          --gatewayVersion ${{env.GATEWAY_VERSION}} \
+          --overwrite \
+          $applicationName
+
+  deprecate_api_instance:
+    name: "Deprecate API Instances"
+    needs: manage_api_instance
+    runs-on: self-hosted
+
+    steps:
+      - name: Deprecate API Instances
+        if: ${{ needs.manage_api_instance.outputs.instances_to_deprecate != '' }}
+        id: deprecate_api_instance
+        run: |
+          anypoint-cli-v4 api-mgr api deprecate ${{needs.manage_api_instance.outputs.instances_to_deprecate}}
+
+  test:
+    name: "Test API Instance"
+    needs: [publish, deploy_api_instance]
+    runs-on: self-hosted
+    
+    steps:
+      - name: Sleep for 15 seconds
+        run: sleep 15s
+
+      - name: Test Get Products
+        id: test_get_products
+        run: |
+          output=$(curl -L ${{env.API_CONSUME_ENDPOINT}}${{needs.publish.outputs.api_base_path}}/products -o /dev/null -w "%{http_code}" -s)
+          if [[ $output -eq 200 ]]; then 
+            echo "API Response OK!"
+            exit 0
+          else 
+            echo "API Response Error: $output"
+            exit 1
+          fi
