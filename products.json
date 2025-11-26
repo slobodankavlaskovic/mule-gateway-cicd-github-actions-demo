@@ -1,0 +1,195 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Products API",
+    "version": "1.0.0",
+    "description": "API for managing product data."
+  },
+  "paths": {
+    "/products": {
+      "get": {
+        "summary": "List all products",
+        "responses": {
+          "200": {
+            "description": "A list of products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new product",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/{productId}": {
+      "get": {
+        "summary": "Get a product by ID",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProductId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update an existing product",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProductId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product updated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a product",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProductId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Product deleted"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ProductId": {
+        "name": "productId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Unique ID of the product"
+      }
+    },
+    "schemas": {
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "12345"
+          },
+          "name": {
+            "type": "string",
+            "example": "Paracetamol 500mg"
+          },
+          "activeIngredient": {
+            "type": "string",
+            "example": "Paracetamol"
+          },
+          "form": {
+            "type": "string",
+            "example": "Tablet"
+          },
+          "strength": {
+            "type": "string",
+            "example": "500mg"
+          },
+          "manufacturer": {
+            "type": "string",
+            "example": "ACME Pharma"
+          },
+          "prescriptionRequired": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "required": [
+          "name",
+          "activeIngredient",
+          "form",
+          "strength",
+          "manufacturer",
+          "prescriptionRequired"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "activeIngredient": {
+            "type": "string"
+          },
+          "form": {
+            "type": "string"
+          },
+          "strength": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "prescriptionRequired": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}
