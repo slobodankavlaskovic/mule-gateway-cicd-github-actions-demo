@@ -1,6 +1,9 @@
-ANYPOINT_ORG_ID=
-ANYPOINT_ENV_ID=
-ANYPOINT_ENV=
+# Use this template to create the .vars file. To run the workflow locally using the act tool.
+
+ANYPOINT_HOST=anypoint.mulesoft.com
+ANYPOINT_ORG_ID=<your-anypoint-org-id>
+ANYPOINT_ENV_ID=<your-anypoint-env-id>
+ANYPOINT_ENV=Sandbox
 
 API_SPEC_FILE_PATH=products-api.json
 API_POLICIES_FILE_PATH=policies.json
@@ -10,25 +13,22 @@ ENABLE_MANAGE_POLICIES=true
 
 API_PROTOCOL=http
 API_LISTEN_PORT=8081
-API_BACKEND_UPSTREAM_URI=
+API_BACKEND_UPSTREAM_URI=<your-api-backend-upstream-uri>
 
-# Managed Flex Gateway
-GATEWAY_TYPE=flexGateway
-GATEWAY_VERSION=1.9.0
-GATEWAY_TARGET=
-GATEWAY_DEPLOYMENT_TYPE=hybrid
-API_CONSUME_ENDPOINT=
+# Uncomment this section to deploy to a Managed Flex Gateway
+# GATEWAY_TYPE=flexGateway
+# GATEWAY_VERSION=1.9.0
+# GATEWAY_TARGET=<your-gateway-target-id>
+# GATEWAY_DEPLOYMENT_TYPE=cloudhub2
 
 # Self-managed Flex Gateway
 # GATEWAY_TYPE=flexGateway
 # GATEWAY_VERSION=1.9.0
-# GATEWAY_TARGET=
+# GATEWAY_TARGET=<your-gateway-target-id>
 # GATEWAY_DEPLOYMENT_TYPE=hybrid
-# API_CONSUME_ENDPOINT=
 
 # Mule Gateway
 # GATEWAY_TYPE=mule4
-# GATEWAY_VERSION=4.9.3
+# GATEWAY_VERSION=4.10.1
 # GATEWAY_TARGET=cloudhub-us-east-2
 # GATEWAY_DEPLOYMENT_TYPE=cloudhub2
-# API_CONSUME_ENDPOINT=
