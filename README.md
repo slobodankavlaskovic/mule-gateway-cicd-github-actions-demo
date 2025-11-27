@@ -30,7 +30,7 @@ This pipeline is triggered manually (`workflow_dispatch`) and runs the following
 |----------|------------------------------|-------------------------------------------------------|----------|---------|--------------------------------|
 | Secret   | `ANYPOINT_CLIENT_ID`         | Client ID for Anypoint authentication                 | Yes      | —       | —                              |
 | Secret   | `ANYPOINT_CLIENT_SECRET`     | Client secret for Anypoint authentication             | Yes      | —       | —                              |
-| Variable | `ANYPOINT_HOST`              | Hostname of the Anypoint Platform                     | No       | —       | —                    |
+| Variable | `ANYPOINT_HOST`              | Hostname of the Anypoint Platform                     | Yes       | —       | `anypoint.mulesoft.com`, `eu1.anypoint.mulesoft.com`          |
 | Variable | `ANYPOINT_ORG_ID`            | Organization ID in Anypoint                           | Yes      | —       | —                              |
 | Variable | `ANYPOINT_ENV`               | Environment name                                      | Yes      | —       | `Sandbox`, `Production`, etc. |
 | Variable | `ANYPOINT_ENV_ID`            | Environment ID in Anypoint                            | Yes      | —       | —                              |
@@ -43,7 +43,6 @@ This pipeline is triggered manually (`workflow_dispatch`) and runs the following
 | Variable | `API_BASE_PATH`              | Base path of the API                                  | No       | —       | —                              |
 | Variable | `API_TLS_SECRET_GROUP_ID`    | Secret group ID for TLS configuration (Sef-Hosted FG) | No | — | —                   |
 | Variable | `API_TLS_CONTEXT_ID`         | TLS context ID for inbound communication (Sef-Hosted FG) | No | — | —                   |
-| Variable | `API_CONSUME_ENDPOINT`       | Public endpoint where the API will be consumed        | No       | —       | —                              |
 | Variable | `API_BACKEND_UPSTREAM_URI`   | Backend URI where the API proxies requests            | Yes      | —       | —                              |
 | Variable | `GATEWAY_TYPE`               | Gateway type                                          | Yes      | —       | `flexGateway`, `mule4`         |
 | Variable | `GATEWAY_VERSION`            | Version of the Flex/Mule Gateway to deploy to         | Yes      | —       | —                              |
