@@ -5,7 +5,7 @@
   "organizationId": "5c7fefd3-33c5-458e-952c-ef1ea537c9a9",
   "descriptorVersion": "1.0.0",
   "tags": [],
-  "apiVersion": "1.0.0",
+  "apiVersion": "1.0.0-cicd",
   "groupId": "5c7fefd3-33c5-458e-952c-ef1ea537c9a9",
   "assetId": "products-api",
   "version": "1.0.1"
