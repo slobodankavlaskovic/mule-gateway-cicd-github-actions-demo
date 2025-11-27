@@ -2,11 +2,11 @@
   "main": "products-api.json",
   "name": "products-api",
   "classifier": "oas",
-  "organizationId": "a0321c01-3e15-44ce-b4b8-7370f4d28bbb",
+  "organizationId": "5c7fefd3-33c5-458e-952c-ef1ea537c9a9",
   "descriptorVersion": "1.0.0",
   "tags": [],
-  "groupId": "a0321c01-3e15-44ce-b4b8-7370f4d28bbb",
+  "apiVersion": "1.0.0",
+  "groupId": "5c7fefd3-33c5-458e-952c-ef1ea537c9a9",
   "assetId": "products-api",
-  "version": "1.0.0",
-  "apiVersion": "1.0.0"
+  "version": "1.0.0"
 }
