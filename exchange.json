@@ -7,6 +7,6 @@
   "tags": [],
   "apiVersion": "1.0.0",
   "groupId": "5c7fefd3-33c5-458e-952c-ef1ea537c9a9",
-  "assetId": "products-api",
-  "version": "1.0.1"
+  "assetId": "products-api-cicd",
+  "version": "1.0.2"
 }
