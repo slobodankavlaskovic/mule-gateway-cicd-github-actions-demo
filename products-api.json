@@ -1,195 +1,145 @@
-{
-  "openapi": "3.0.3",
-  "info": {
-    "title": "Products API",
-    "version": "1.0.0",
-    "description": "API for managing product data."
-  },
-  "paths": {
-    "/products": {
-      "get": {
-        "summary": "List all products",
-        "responses": {
-          "200": {
-            "description": "A list of products",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Product"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "summary": "Create a new product",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProductInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Product created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Product"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/products/{productId}": {
-      "get": {
-        "summary": "Get a product by ID",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ProductId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Product found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Product"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Product not found"
-          }
-        }
-      },
-      "put": {
-        "summary": "Update an existing product",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ProductId"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProductInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Product updated"
-          }
-        }
-      },
-      "delete": {
-        "summary": "Delete a product",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ProductId"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Product deleted"
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "parameters": {
-      "ProductId": {
-        "name": "productId",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "string"
-        },
-        "description": "Unique ID of the product"
-      }
-    },
-    "schemas": {
-      "Product": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "12345"
-          },
-          "name": {
-            "type": "string",
-            "example": "Paracetamol 500mg"
-          },
-          "activeIngredient": {
-            "type": "string",
-            "example": "Paracetamol"
-          },
-          "form": {
-            "type": "string",
-            "example": "Tablet"
-          },
-          "strength": {
-            "type": "string",
-            "example": "500mg"
-          },
-          "manufacturer": {
-            "type": "string",
-            "example": "ACME Pharma"
-          },
-          "prescriptionRequired": {
-            "type": "boolean",
-            "example": false
-          }
-        }
-      },
-      "ProductInput": {
-        "type": "object",
-        "required": [
-          "name",
-          "activeIngredient",
-          "form",
-          "strength",
-          "manufacturer",
-          "prescriptionRequired"
-        ],
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "activeIngredient": {
-            "type": "string"
-          },
-          "form": {
-            "type": "string"
-          },
-          "strength": {
-            "type": "string"
-          },
-          "manufacturer": {
-            "type": "string"
-          },
-          "prescriptionRequired": {
-            "type": "boolean"
-          }
-        }
-      }
-    }
-  }
-}
+#%RAML 1.0
+title: Customer Profile Experience API Advanced
+version: v1
+baseUri: /customer
+description: |
+  A secure, high-traffic Customer Profile Look-up Experience API that provides 
+  individual customer profile information retrieval capabilities. This API is 
+  designed for enterprise-grade performance and security requirements.
+
+types:
+  CustomerProfile:
+    type: object
+    description: Complete customer profile information
+    properties:
+      customerId:
+        type: string
+        description: Unique customer identifier
+        required: true
+      firstName:
+        type: string
+        description: Customer's first name
+        required: true
+      lastName:
+        type: string
+        description: Customer's last name
+        required: true
+      email:
+        type: string
+        description: Customer's email address
+        required: true
+      status:
+        type: string
+        enum: ["Active", "Inactive", "Pending"]
+        description: Current status of the customer account
+        required: true
+    example:
+      customerId: "1234567890123"
+      firstName: "John"
+      lastName: "Doe"
+      email: "john.doe@example.com"
+      status: "Active"
+
+  ErrorResponse:
+    type: object
+    description: Standard error response format
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: Error code identifier
+          message:
+            type: string
+            description: Human-readable error message
+          timestamp:
+            type: string
+            description: ISO 8601 timestamp of when the error occurred
+    example:
+      error:
+        code: "CUSTOMER_NOT_FOUND"
+        message: "Customer with the specified ID was not found"
+        timestamp: "2024-11-28T12:57:30Z"
+
+traits:
+  standardHeaders:
+    description: Standard headers for all API requests
+    headers:
+      Content-Type:
+        type: string
+        default: application/json
+        description: Media type of the request/response body
+      Accept:
+        type: string
+        default: application/json
+        description: Media types that are acceptable for the response
+
+/v1/profiles:
+  description: Customer profile management endpoint
+  /{customer_id}:
+    description: Individual customer profile lookup by customer ID
+    uriParameters:
+      customer_id:
+        type: string
+        description: |
+          Unique customer identifier. Must be a numeric string between 10 and 15 digits.
+          This parameter is used to retrieve specific customer profile information.
+        pattern: ^\d{10,15}$
+        required: true
+        example: "1234567890123"
+    get:
+      is: [standardHeaders]
+      description: |
+        Retrieves detailed profile information for a specific customer using their unique customer ID.
+        This endpoint is optimized for high-traffic scenarios and provides comprehensive customer data
+        including personal information and account status.
+      responses:
+        200:
+          description: |
+            Successfully retrieved customer profile information. Returns complete customer details
+            including identification, contact information, and current account status.
+          body:
+            application/json:
+              type: CustomerProfile
+              example:
+                customerId: "1234567890123"
+                firstName: "John"
+                lastName: "Doe"
+                email: "john.doe@example.com"
+                status: "Active"
+        404:
+          description: |
+            Customer not found. The specified customer ID does not exist in the system or
+            the customer record is not accessible.
+          body:
+            application/json:
+              type: ErrorResponse
+              example:
+                error:
+                  code: "CUSTOMER_NOT_FOUND"
+                  message: "Customer with the specified ID was not found"
+                  timestamp: "2024-11-28T12:57:30Z"
+        400:
+          description: |
+            Bad request. The customer ID parameter does not meet the required format or
+            validation criteria.
+          body:
+            application/json:
+              type: ErrorResponse
+              example:
+                error:
+                  code: "INVALID_CUSTOMER_ID"
+                  message: "Customer ID must be a numeric string between 10 and 15 digits"
+                  timestamp: "2024-11-28T12:57:30Z"
+        500:
+          description: |
+            Internal server error. An unexpected error occurred while processing the request.
+          body:
+            application/json:
+              type: ErrorResponse
+              example:
+                error:
+                  code: "INTERNAL_SERVER_ERROR"
+                  message: "An unexpected error occurred while processing your request"
+                  timestamp: "2024-11-28T12:57:30Z"
