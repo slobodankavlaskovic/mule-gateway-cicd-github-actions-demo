@@ -1,4 +1,4 @@
-# MuleSoft APIM CI/CD Example
+# MuleSoft APIM CI/CD Demo
 
 This project demonstrates a complete CI/CD pipeline for managing API specifications and instances in MuleSoft's Anypoint Platform, using GitHub Actions. It showcases the use of both the Anypoint CLI and Anypoint Platform REST APIs to automate API lifecycle tasks such as validation, publication, deployment, and policy management.
 
