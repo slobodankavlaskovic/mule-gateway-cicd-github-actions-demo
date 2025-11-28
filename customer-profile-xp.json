@@ -1,0 +1,133 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Customer Profile Experience API Advanced",
+    "description": "A secure, high-traffic Customer Profile Look-up Experience API for retrieving individual customer profiles",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/customer/v1",
+      "description": "Customer Profile API Base URI"
+    }
+  ],
+  "paths": {
+    "/profiles/{customer_id}": {
+      "get": {
+        "summary": "Retrieve customer profile by ID",
+        "description": "Fetches a customer profile using the customer ID",
+        "operationId": "getCustomerProfile",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "description": "Unique customer identifier (10-15 digits)",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{10,15}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerProfile"
+                },
+                "example": {
+                  "customerId": "1234567890123",
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com",
+                  "status": "Active"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Customer not found",
+                  "message": "No customer found with the provided customer ID",
+                  "code": "CUSTOMER_NOT_FOUND"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CustomerProfile": {
+        "type": "object",
+        "required": [
+          "customerId",
+          "firstName",
+          "lastName",
+          "email",
+          "status"
+        ],
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "Unique customer identifier"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Customer's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Customer's last name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Customer's email address"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Active",
+              "Inactive",
+              "Pending"
+            ],
+            "description": "Current status of the customer account"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "error",
+          "message",
+          "code"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error summary"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detailed error message"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error code for programmatic handling"
+          }
+        }
+      }
+    }
+  }
+}

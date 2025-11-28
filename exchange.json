@@ -1,7 +1,7 @@
 {
-  "main": "customer-profile-xp.raml",
+  "main": "customer-profile-xp.json",
   "name": "Customer Profile Experience API Advanced",
-  "classifier": "raml",
+  "classifier": "oas",
   "organizationId": "5c7fefd3-33c5-458e-952c-ef1ea537c9a9",
   "descriptorVersion": "1.0.0",
   "tags": [
@@ -9,11 +9,10 @@
     "profile",
     "experience-api",
     "lookup",
-    "high-traffic",
-    "secure"
+    "high-traffic"
   ],
+  "apiVersion": "v1",
   "groupId": "5c7fefd3-33c5-458e-952c-ef1ea537c9a9",
   "assetId": "customer-profile-experience-api",
-  "version": "1.0.0",
-  "apiVersion": "v1"
+  "version": "1.0.0"
 }
