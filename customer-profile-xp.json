@@ -2,20 +2,20 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Customer Profile Exp API",
-    "description": "A secure, high-traffic Customer Profile Look-up Experience API that provides customer profile information retrieval capabilities.",
+    "description": "A secure, high-traffic Customer Profile Look-up Experience API for retrieving individual customer profile information",
     "version": "1.0.0"
   },
   "servers": [
     {
       "url": "/customer/v1",
-      "description": "Customer Profile API base path"
+      "description": "Customer Profile API base URI"
     }
   ],
   "paths": {
     "/profiles/{customer_id}": {
       "get": {
         "summary": "Retrieve customer profile by ID",
-        "description": "Retrieves detailed customer profile information for a given customer ID. Designed for high-traffic scenarios with secure access patterns.",
+        "description": "Retrieves detailed profile information for a specific customer using their unique customer ID",
         "operationId": "getCustomerProfile",
         "parameters": [
           {
@@ -26,8 +26,7 @@
             "schema": {
               "type": "string",
               "pattern": "^\\d{10,15}$"
-            },
-            "example": "1234567890123"
+            }
           }
         ],
         "responses": {
@@ -36,32 +35,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "customerId": {
-                      "type": "string",
-                      "description": "Unique customer identifier"
-                    },
-                    "firstName": {
-                      "type": "string",
-                      "description": "Customer's first name"
-                    },
-                    "lastName": {
-                      "type": "string",
-                      "description": "Customer's last name"
-                    },
-                    "email": {
-                      "type": "string",
-                      "description": "Customer's email address"
-                    },
-                    "status": {
-                      "type": "string",
-                      "enum": ["Active", "Inactive", "Pending"],
-                      "description": "Current status of the customer account"
-                    }
-                  },
-                  "required": ["customerId", "firstName", "lastName", "email", "status"],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/CustomerProfile"
                 },
                 "example": {
                   "customerId": "1234567890123",
@@ -78,21 +52,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "description": "Error message"
-                    },
-                    "code": {
-                      "type": "string",
-                      "description": "Error code"
-                    }
-                  },
-                  "required": ["error", "code"]
+                  "$ref": "#/components/schemas/ErrorResponse"
                 },
                 "example": {
                   "error": "Customer not found",
+                  "message": "No customer found with the provided customer ID",
                   "code": "CUSTOMER_NOT_FOUND"
                 }
               }
@@ -106,7 +70,13 @@
     "schemas": {
       "CustomerProfile": {
         "type": "object",
-        "description": "Customer profile data structure containing essential customer information",
+        "required": [
+          "customerId",
+          "firstName",
+          "lastName",
+          "email",
+          "status"
+        ],
         "properties": {
           "customerId": {
             "type": "string",
@@ -126,12 +96,36 @@
           },
           "status": {
             "type": "string",
-            "enum": ["Active", "Inactive", "Pending"],
+            "enum": [
+              "Active",
+              "Inactive",
+              "Pending"
+            ],
             "description": "Current status of the customer account"
           }
-        },
-        "required": ["customerId", "firstName", "lastName", "email", "status"],
-        "additionalProperties": false
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "error",
+          "message",
+          "code"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error summary"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detailed error message"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error code for programmatic handling"
+          }
+        }
       }
     }
   }

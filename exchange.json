@@ -8,8 +8,7 @@
     "customer",
     "profile",
     "experience-api",
-    "lookup",
-    "high-traffic"
+    "lookup"
   ],
   "apiVersion": "v1",
   "groupId": "5c7fefd3-33c5-458e-952c-ef1ea537c9a9",
