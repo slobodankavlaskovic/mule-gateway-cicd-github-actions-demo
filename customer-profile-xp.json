@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Customer Profile Exp API",
-    "description": "A secure, high-traffic Customer Profile Look-up Experience API that provides customer profile information retrieval capabilities.",
+    "description": "A secure, high-traffic Experience API for customer profile lookup operations. This API provides access to individual customer profile information through a standardized interface.",
     "version": "1.0.0"
   },
   "servers": [
@@ -15,7 +15,7 @@
     "/profiles/{customer_id}": {
       "get": {
         "summary": "Retrieve customer profile by ID",
-        "description": "Fetches detailed customer profile information using a unique customer identifier. The customer ID must be a numeric string between 10 and 15 digits.",
+        "description": "Fetches detailed profile information for a specific customer using their unique customer identifier. The customer ID must be a numeric string between 10-15 digits.",
         "operationId": "getCustomerProfile",
         "parameters": [
           {
@@ -26,7 +26,8 @@
             "schema": {
               "type": "string",
               "pattern": "^\\d{10,15}$"
-            }
+            },
+            "example": "1234567890123"
           }
         ],
         "responses": {
@@ -48,28 +49,34 @@
                   "properties": {
                     "customerId": {
                       "type": "string",
-                      "description": "Unique customer identifier"
+                      "description": "Unique customer identifier",
+                      "example": "1234567890123"
                     },
                     "firstName": {
                       "type": "string",
-                      "description": "Customer's first name"
+                      "description": "Customer's first name",
+                      "example": "John"
                     },
                     "lastName": {
                       "type": "string",
-                      "description": "Customer's last name"
+                      "description": "Customer's last name",
+                      "example": "Doe"
                     },
                     "email": {
                       "type": "string",
-                      "description": "Customer's email address"
+                      "description": "Customer's email address",
+                      "format": "email",
+                      "example": "john.doe@example.com"
                     },
                     "status": {
                       "type": "string",
+                      "description": "Current status of the customer account",
                       "enum": [
                         "Active",
                         "Inactive",
                         "Pending"
                       ],
-                      "description": "Current status of the customer account"
+                      "example": "Active"
                     }
                   }
                 },
@@ -84,7 +91,7 @@
             }
           },
           "404": {
-            "description": "Customer not found",
+            "description": "Customer not found - The specified customer ID does not exist in the system",
             "content": {
               "application/json": {
                 "schema": {
@@ -94,15 +101,15 @@
                       "type": "string",
                       "description": "Error message"
                     },
-                    "code": {
+                    "message": {
                       "type": "string",
-                      "description": "Error code"
+                      "description": "Detailed error description"
                     }
                   }
                 },
                 "example": {
-                  "error": "Customer not found",
-                  "code": "CUSTOMER_NOT_FOUND"
+                  "error": "Customer Not Found",
+                  "message": "No customer found with the provided customer ID"
                 }
               }
             }
