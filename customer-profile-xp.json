@@ -5,11 +5,18 @@
     "description": "A secure, high-traffic Customer Profile Look-up Experience API that provides customer profile information retrieval capabilities.",
     "version": "1.0.0"
   },
+  "servers": [
+    {
+      "url": "/customer/v1",
+      "description": "Customer Profile API base path"
+    }
+  ],
   "paths": {
-    "/customer/v1/profiles/{customer_id}": {
+    "/profiles/{customer_id}": {
       "get": {
         "summary": "Retrieve customer profile by ID",
-        "description": "Retrieves detailed customer profile information for a given customer ID. The customer ID must be a valid 10-15 digit numeric identifier.",
+        "description": "Fetches detailed customer profile information using a unique customer identifier. The customer ID must be a numeric string between 10 and 15 digits.",
+        "operationId": "getCustomerProfile",
         "parameters": [
           {
             "name": "customer_id",
@@ -30,6 +37,7 @@
                 "schema": {
                   "type": "object",
                   "title": "CustomerProfile",
+                  "description": "Complete customer profile information",
                   "required": [
                     "customerId",
                     "firstName",
