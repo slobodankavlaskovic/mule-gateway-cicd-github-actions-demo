@@ -86,7 +86,7 @@ jobs:
           asset_version="$(echo $api_spec | jq -r '.info.version')"
           asset_major_version=`echo $asset_version | awk -F"." '{print $1}'`
           api_version="v${asset_major_version}"
-          api_base_path="/${api_version}${{env.API_BASE_PATH}}"
+          api_base_path="${{env.API_BASE_PATH}}"
           api_label="${asset_version}-$(echo ${{env.GATEWAY_TYPE}} | cut -c 1-4)-$(echo ${{env.GATEWAY_TARGET}} | cut -c 1-8)"
 
           echo "asset_name=$asset_name" >> "$GITHUB_OUTPUT"
