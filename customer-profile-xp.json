@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Customer Profile Exp API",
-    "description": "A secure, high-traffic Experience API for customer profile lookup operations. This API provides access to individual customer profile information through a standardized interface.",
+    "description": "A secure, high-traffic Customer Profile Look-up Experience API that provides access to individual customer profile information. This API is designed for high-performance scenarios and follows MuleSoft best practices for Experience APIs.",
     "version": "1.0.0"
   },
   "servers": [
@@ -15,7 +15,7 @@
     "/profiles/{customer_id}": {
       "get": {
         "summary": "Retrieve customer profile by ID",
-        "description": "Fetches detailed profile information for a specific customer using their unique customer identifier. The customer ID must be a numeric string between 10-15 digits.",
+        "description": "Fetches detailed profile information for a specific customer using their unique customer identifier. The customer ID must be a numeric string between 10 and 15 digits.",
         "operationId": "getCustomerProfile",
         "parameters": [
           {
@@ -26,8 +26,7 @@
             "schema": {
               "type": "string",
               "pattern": "^\\d{10,15}$"
-            },
-            "example": "1234567890123"
+            }
           }
         ],
         "responses": {
@@ -36,49 +35,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "title": "CustomerProfile",
-                  "description": "Complete customer profile information",
-                  "required": [
-                    "customerId",
-                    "firstName",
-                    "lastName",
-                    "email",
-                    "status"
-                  ],
-                  "properties": {
-                    "customerId": {
-                      "type": "string",
-                      "description": "Unique customer identifier",
-                      "example": "1234567890123"
-                    },
-                    "firstName": {
-                      "type": "string",
-                      "description": "Customer's first name",
-                      "example": "John"
-                    },
-                    "lastName": {
-                      "type": "string",
-                      "description": "Customer's last name",
-                      "example": "Doe"
-                    },
-                    "email": {
-                      "type": "string",
-                      "description": "Customer's email address",
-                      "format": "email",
-                      "example": "john.doe@example.com"
-                    },
-                    "status": {
-                      "type": "string",
-                      "description": "Current status of the customer account",
-                      "enum": [
-                        "Active",
-                        "Inactive",
-                        "Pending"
-                      ],
-                      "example": "Active"
-                    }
-                  }
+                  "$ref": "#/components/schemas/CustomerProfile"
                 },
                 "example": {
                   "customerId": "1234567890123",
@@ -91,26 +48,97 @@
             }
           },
           "404": {
-            "description": "Customer not found - The specified customer ID does not exist in the system",
+            "description": "Customer not found",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "description": "Error message"
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Detailed error description"
-                    }
-                  }
+                  "$ref": "#/components/schemas/ErrorResponse"
                 },
                 "example": {
-                  "error": "Customer Not Found",
-                  "message": "No customer found with the provided customer ID"
+                  "error": {
+                    "code": "CUSTOMER_NOT_FOUND",
+                    "message": "Customer with the specified ID was not found",
+                    "details": "No customer record exists for the provided customer_id"
+                  }
                 }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CustomerProfile": {
+        "type": "object",
+        "description": "Complete customer profile information",
+        "required": [
+          "customerId",
+          "firstName",
+          "lastName",
+          "email",
+          "status"
+        ],
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "Unique customer identifier",
+            "pattern": "^\\d{10,15}$"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Customer's first name",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Customer's last name",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "email": {
+            "type": "string",
+            "description": "Customer's email address",
+            "format": "email"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the customer account",
+            "enum": [
+              "Active",
+              "Inactive",
+              "Pending"
+            ]
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Standard error response format",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Error code identifier"
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable error message"
+              },
+              "details": {
+                "type": "string",
+                "description": "Additional error details"
               }
             }
           }
