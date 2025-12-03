@@ -8,7 +8,8 @@
     "customer",
     "profile",
     "experience-api",
-    "lookup"
+    "lookup",
+    "high-traffic"
   ],
   "groupId": "5c7fefd3-33c5-458e-952c-ef1ea537c9a9",
   "assetId": "customer-profile-exp-api",

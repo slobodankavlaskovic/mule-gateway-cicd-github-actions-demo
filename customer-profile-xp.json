@@ -2,20 +2,20 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Customer Profile Exp API",
-    "description": "A secure, high-traffic Customer Profile Look-up Experience API that provides customer profile information retrieval capabilities.",
+    "description": "A secure, high-traffic Customer Profile Look-up Experience API that provides customer profile information based on customer ID. This API is designed for enterprise-level traffic and follows MuleSoft best practices for Experience APIs.",
     "version": "1.0.0"
   },
   "servers": [
     {
       "url": "/customer/v1",
-      "description": "Customer Profile API base path"
+      "description": "Customer Profile Experience API base path"
     }
   ],
   "paths": {
     "/profiles/{customer_id}": {
       "get": {
         "summary": "Retrieve customer profile by ID",
-        "description": "Retrieves detailed customer profile information for a specific customer ID. The customer ID must be a numeric string between 10 and 15 digits.",
+        "description": "Fetches detailed customer profile information using a unique customer identifier. The customer ID must be a numeric string between 10 and 15 digits.",
         "operationId": "getCustomerProfile",
         "parameters": [
           {
@@ -25,9 +25,9 @@
             "description": "Unique customer identifier (10-15 digits)",
             "schema": {
               "type": "string",
-              "pattern": "^\\d{10,15}$"
-            },
-            "example": "1234567890123"
+              "pattern": "^\\d{10,15}$",
+              "example": "1234567890123"
+            }
           }
         ],
         "responses": {
@@ -38,7 +38,7 @@
                 "schema": {
                   "type": "object",
                   "title": "CustomerProfile",
-                  "description": "Customer profile information",
+                  "description": "Complete customer profile information",
                   "required": [
                     "customerId",
                     "firstName",
@@ -64,18 +64,18 @@
                     },
                     "email": {
                       "type": "string",
-                      "description": "Customer's email address",
                       "format": "email",
+                      "description": "Customer's email address",
                       "example": "john.doe@example.com"
                     },
                     "status": {
                       "type": "string",
-                      "description": "Current status of the customer account",
                       "enum": [
                         "Active",
                         "Inactive",
                         "Pending"
                       ],
+                      "description": "Current status of the customer account",
                       "example": "Active"
                     }
                   }
@@ -91,7 +91,7 @@
             }
           },
           "404": {
-            "description": "Customer not found",
+            "description": "Customer not found - The specified customer ID does not exist in the system",
             "content": {
               "application/json": {
                 "schema": {
@@ -99,17 +99,17 @@
                   "properties": {
                     "error": {
                       "type": "string",
-                      "description": "Error message"
+                      "description": "Error message indicating the customer was not found"
                     },
-                    "message": {
+                    "code": {
                       "type": "string",
-                      "description": "Detailed error description"
+                      "description": "Error code for the not found condition"
                     }
                   }
                 },
                 "example": {
-                  "error": "Not Found",
-                  "message": "Customer with ID 1234567890123 was not found"
+                  "error": "Customer not found",
+                  "code": "CUSTOMER_NOT_FOUND"
                 }
               }
             }
